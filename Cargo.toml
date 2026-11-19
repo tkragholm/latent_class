@@ -8,8 +8,8 @@ description = "Latent class analysis of binary indicators by EM with parallel ra
 
 [dependencies]
 faer = { version = "0.24.0", features = ["nightly", "perf-warn"] }
-epistat-optim = { git = "https://github.com/tkragholm/epistat", rev = "a6068fe6d8eece35b88aa71866f449c2aa8ab62a", features = ["rayon"] }
-epistat-rng = { git = "https://github.com/tkragholm/epistat", rev = "a6068fe6d8eece35b88aa71866f449c2aa8ab62a", features = ["rand"] }
+epistat-optim = { version = "0.1.0", features = ["rayon"] }
+epistat-rng = { version = "0.1.2", features = ["rand"] }
 rand_distr = { version = "0.6.0", default-features = false }
 serde = { version = "1.0.228", features = ["serde_derive"], default-features = false }
 thiserror = { version = "2.0.18", default-features = false }
