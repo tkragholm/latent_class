@@ -3,17 +3,12 @@
 use crate::data::IndicatorMatrix;
 use epistat_rng::Stream;
 use faer::Mat;
-use rand_distr::{Beta, Distribution};
 
 /// Create random initial parameters for EM.
 ///
 /// Draws π from a symmetric Uniform(0.1, 1.0) and normalizes to 1.
 /// Draws each ρ_{jk} from Beta(2,2) to bias away from 0/1.
 ///
-/// # Panics
-///
-/// Panics if `Beta::new(2.0, 2.0)` fails to construct, which should not
-/// happen for these valid positive shape parameters.
 #[must_use]
 pub fn random_init(n_classes: usize, n_indicators: usize, seed: u64) -> (Vec<f64>, Mat<f64>) {
     let mut rng = Stream::seeded(seed);
@@ -26,11 +21,10 @@ pub fn random_init(n_classes: usize, n_indicators: usize, seed: u64) -> (Vec<f64
     }
 
     // 2. ρ: item-response probabilities (K x J matrix)
-    let beta = Beta::new(2.0, 2.0).unwrap();
     let mut rho = Mat::zeros(n_classes, n_indicators);
     for k in 0..n_classes {
         for j in 0..n_indicators {
-            rho[(k, j)] = beta.sample(&mut rng);
+            rho[(k, j)] = rng.beta(2.0, 2.0).expect("the shapes are positive");
         }
     }
 

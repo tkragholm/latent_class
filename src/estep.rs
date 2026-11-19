@@ -1,6 +1,7 @@
 //! Shared E-step posterior computation with reusable workspace.
 
 use crate::data::IndicatorMatrix;
+use epistat_stats::likelihood::log_sum_exp;
 use faer::Mat;
 
 /// Reusable buffers for E-step-style posterior computation.
@@ -87,16 +88,7 @@ pub fn compute_posteriors_with_workspace(
             }
         }
 
-        let max_log = workspace
-            .log_post
-            .iter()
-            .fold(f64::NEG_INFINITY, |a, &b| a.max(b));
-        let sum_exp: f64 = workspace
-            .log_post
-            .iter()
-            .map(|&lp| (lp - max_log).exp())
-            .sum();
-        let log_sum = max_log + sum_exp.ln();
+        let log_sum = log_sum_exp(&workspace.log_post);
         total_ll += log_sum;
 
         for kk in 0..k {

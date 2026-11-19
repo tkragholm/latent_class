@@ -8,6 +8,7 @@ use crate::diagnostics::DiagnosticsConfig;
 use crate::error::LcaError;
 use crate::fit::LcaFit;
 use crate::model::{EmConfig, LcaModel};
+use epistat_stats::likelihood;
 use serde::{Deserialize, Serialize};
 
 /// Comparative statistics for model selection.
@@ -47,16 +48,10 @@ pub struct ModelSelectionStats {
 impl ModelSelectionStats {
     /// Calculate stats for a fitted model.
     #[must_use]
-    #[expect(
-        clippy::cast_precision_loss,
-        reason = "information criteria require floating-point sample/parameter counts"
-    )]
     pub fn new(fit: &LcaFit, data: &IndicatorMatrix) -> Self {
         let n = LcaFit::n_individuals_internal(data);
         let p = fit.n_params();
         let ll = fit.log_likelihood();
-        let n_f64 = n as f64;
-        let p_f64 = p as f64;
 
         let posteriors = fit.compute_posteriors(data);
 
@@ -65,9 +60,9 @@ impl ModelSelectionStats {
             log_likelihood: ll,
             n_params: p,
             n_individuals: n,
-            aic: (-2.0f64).mul_add(ll, 2.0 * p_f64),
-            bic: (-2.0f64).mul_add(ll, p_f64 * n_f64.ln()),
-            sabic: (-2.0f64).mul_add(ll, p_f64 * ((n_f64 + 2.0) / 24.0).ln()),
+            aic: likelihood::aic(ll, p),
+            bic: likelihood::bic(ll, p, n),
+            sabic: likelihood::sabic(ll, p, n),
             mean_posterior_entropy: posteriors.mean_entropy(),
             modal_assignment_purity: posteriors.modal_assignment_purity(),
             ll_replications: fit.ll_replications(),
