@@ -1,8 +1,8 @@
 //! EM Initialization strategies.
 
 use crate::data::IndicatorMatrix;
+use epistat_rng::Stream;
 use faer::Mat;
-use rand::prelude::*;
 use rand_distr::{Beta, Distribution};
 
 /// Create random initial parameters for EM.
@@ -16,10 +16,10 @@ use rand_distr::{Beta, Distribution};
 /// happen for these valid positive shape parameters.
 #[must_use]
 pub fn random_init(n_classes: usize, n_indicators: usize, seed: u64) -> (Vec<f64>, Mat<f64>) {
-    let mut rng = StdRng::seed_from_u64(seed);
+    let mut rng = Stream::seeded(seed);
 
     // 1. π: class prevalences (sum to 1)
-    let mut pi: Vec<f64> = (0..n_classes).map(|_| rng.random_range(0.1..1.0)).collect();
+    let mut pi: Vec<f64> = (0..n_classes).map(|_| 0.1 + 0.9 * rng.uniform()).collect();
     let sum_pi: f64 = pi.iter().sum();
     for p in &mut pi {
         *p /= sum_pi;
@@ -55,17 +55,17 @@ pub fn k_modes_init(data: &IndicatorMatrix, n_classes: usize, seed: u64) -> (Vec
     let n = data.n_individuals();
     let j_count = data.n_indicators();
     let raw_data = data.data();
-    let mut rng = StdRng::seed_from_u64(seed);
+    let mut rng = Stream::seeded(seed);
 
     // 1. Initial modes: pick K random individuals as starting modes
     let mut modes = vec![vec![0u8; j_count]; n_classes];
     let mut indices: Vec<usize> = (0..n).collect();
-    indices.shuffle(&mut rng);
+    rng.shuffle(&mut indices);
     for k in 0..n_classes {
         let idx = indices[k];
         for j in 0..j_count {
             modes[k][j] = if data.is_missing(idx, j) {
-                rng.random_range(0..=1)
+                u8::from(rng.below(2) == 1)
             } else {
                 raw_data[idx * j_count + j]
             };

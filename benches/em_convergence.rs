@@ -1,21 +1,21 @@
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use epistat_rng::Stream;
 use latent_class::{EmConfig, IndicatorMatrix, LcaModel};
-use rand::prelude::*;
 
 fn generate_synthetic_data(n: usize, j: usize, k_true: usize, seed: u64) -> IndicatorMatrix {
-    let mut rng = StdRng::seed_from_u64(seed);
+    let mut rng = Stream::seeded(seed);
     let mut cols = Vec::with_capacity(j);
 
     // Create J indicator columns
     for jj in 0..j {
         let mut col = Vec::with_capacity(n);
         // Randomly assign class-specific probabilities for this indicator
-        let class_probs: Vec<f64> = (0..k_true).map(|_| rng.random_range(0.1..0.9)).collect();
+        let class_probs: Vec<f64> = (0..k_true).map(|_| 0.1 + 0.8 * rng.uniform()).collect();
 
         for i in 0..n {
             let class = i % k_true;
             let p = class_probs[class];
-            col.push(Some(u8::from(rng.random_bool(p))));
+            col.push(Some(u8::from(rng.uniform() < p)));
         }
         cols.push((format!("v{jj}"), col));
     }

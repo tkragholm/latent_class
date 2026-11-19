@@ -8,7 +8,14 @@ use crate::em::run_em;
 use crate::error::LcaError;
 use crate::fit::LcaFit;
 use crate::init::{k_modes_init, random_init};
+use epistat_rng::replicate_seed;
 use rayon::prelude::*;
+use std::hash::{BuildHasher, RandomState};
+
+/// A seed from the operating system's entropy, for fits without a fixed seed.
+fn entropy_seed() -> u64 {
+    RandomState::new().hash_one(0_u64)
+}
 
 /// Shared EM hyperparameters.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -110,13 +117,13 @@ impl LcaModel {
         } else {
             self.config.n_restarts
         };
-        let base_seed = self.config.seed.unwrap_or_else(rand::random);
+        let base_seed = self.config.seed.unwrap_or_else(entropy_seed);
 
         // Run restarts in parallel
         let results: Vec<_> = (0..n_restarts)
             .into_par_iter()
             .map(|i| {
-                let seed = base_seed.wrapping_add(i as u64);
+                let seed = replicate_seed(base_seed, i as u64);
                 // First restart (index 0) uses structured K-modes init if seed is present
                 // OR if it's the only restart.
                 let (pi_init, rho_init) = if i == 0 {

@@ -315,9 +315,7 @@ mod tests {
         // Class 0: high p for v1,v2; low p for v3,v4
         // Class 1: low p for v1,v2; high p for v3,v4
         // N=100
-        use rand::RngExt;
-        use rand::SeedableRng;
-        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+        let mut rng = epistat_rng::Stream::seeded(42);
         let mut v1 = Vec::new();
         let mut v2 = Vec::new();
         let mut v3 = Vec::new();
@@ -326,16 +324,16 @@ mod tests {
         for i in 0..100 {
             if i < 50 {
                 // Class 0
-                v1.push(Some(u8::from(rng.random_bool(0.9))));
-                v2.push(Some(u8::from(rng.random_bool(0.9))));
-                v3.push(Some(u8::from(rng.random_bool(0.1))));
-                v4.push(Some(u8::from(rng.random_bool(0.1))));
+                v1.push(Some(u8::from(rng.uniform() < 0.9)));
+                v2.push(Some(u8::from(rng.uniform() < 0.9)));
+                v3.push(Some(u8::from(rng.uniform() < 0.1)));
+                v4.push(Some(u8::from(rng.uniform() < 0.1)));
             } else {
                 // Class 1
-                v1.push(Some(u8::from(rng.random_bool(0.1))));
-                v2.push(Some(u8::from(rng.random_bool(0.1))));
-                v3.push(Some(u8::from(rng.random_bool(0.9))));
-                v4.push(Some(u8::from(rng.random_bool(0.9))));
+                v1.push(Some(u8::from(rng.uniform() < 0.1)));
+                v2.push(Some(u8::from(rng.uniform() < 0.1)));
+                v3.push(Some(u8::from(rng.uniform() < 0.9)));
+                v4.push(Some(u8::from(rng.uniform() < 0.9)));
             }
         }
 
