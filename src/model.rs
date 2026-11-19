@@ -8,8 +8,8 @@ use crate::em::run_em;
 use crate::error::LcaError;
 use crate::fit::LcaFit;
 use crate::init::{k_modes_init, random_init};
+use epistat_optim::multistart;
 use epistat_rng::replicate_seed;
-use rayon::prelude::*;
 use std::hash::{BuildHasher, RandomState};
 
 /// A seed from the operating system's entropy, for fits without a fixed seed.
@@ -119,21 +119,19 @@ impl LcaModel {
         };
         let base_seed = self.config.seed.unwrap_or_else(entropy_seed);
 
-        // Run restarts in parallel
-        let results: Vec<_> = (0..n_restarts)
-            .into_par_iter()
-            .map(|i| {
-                let seed = replicate_seed(base_seed, i as u64);
-                // First restart (index 0) uses structured K-modes init if seed is present
-                // OR if it's the only restart.
-                let (pi_init, rho_init) = if i == 0 {
-                    k_modes_init(data, self.n_classes, seed)
-                } else {
-                    random_init(self.n_classes, data.n_indicators(), seed)
-                };
-                run_em(data, self.n_classes, pi_init, rho_init, &self.config)
-            })
-            .collect();
+        // Restart i owns the seed replicate_seed(base_seed, i). The results come
+        // back in restart order and are folded below in that order.
+        let results = multistart::run(n_restarts, |i| {
+            let seed = replicate_seed(base_seed, i as u64);
+            // First restart (index 0) uses structured K-modes init if seed is present
+            // OR if it's the only restart.
+            let (pi_init, rho_init) = if i == 0 {
+                k_modes_init(data, self.n_classes, seed)
+            } else {
+                random_init(self.n_classes, data.n_indicators(), seed)
+            };
+            run_em(data, self.n_classes, pi_init, rho_init, &self.config)
+        });
 
         let mut best_fit: Option<LcaFit> = None;
         let mut ll_replications = 0;
